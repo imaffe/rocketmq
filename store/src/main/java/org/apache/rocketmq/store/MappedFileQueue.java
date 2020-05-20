@@ -279,6 +279,7 @@ public class MappedFileQueue {
                 mappedFileLast.setCommittedPosition(where);
                 break;
             } else {
+                mappedFileLast.destroy(1000);
                 iterator.remove();
             }
         }
