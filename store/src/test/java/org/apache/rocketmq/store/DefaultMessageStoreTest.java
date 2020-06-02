@@ -192,7 +192,7 @@ public class DefaultMessageStoreTest {
         //Thread.sleep(10);
         StoreTestUtil.waitCommitLogReput((DefaultMessageStore) messageStore);
 
-        ConsumeQueue consumeQueue = getDefaultMessageStore().findConsumeQueue(topic, queueId);
+        ConsumeQueue consumeQueue = getDefaultMessageStore().findConsumeQueueAndCreateIfNotExist(topic, queueId);
         for (AppendMessageResult appendMessageResult : appendMessageResults) {
             long offset = messageStore.getOffsetInQueueByTime(topic, queueId, appendMessageResult.getStoreTimestamp());
             SelectMappedBufferResult indexBuffer = consumeQueue.getIndexBuffer(offset);
@@ -212,7 +212,7 @@ public class DefaultMessageStoreTest {
         StoreTestUtil.waitCommitLogReput((DefaultMessageStore) messageStore);
         int skewing = 2;
 
-        ConsumeQueue consumeQueue = getDefaultMessageStore().findConsumeQueue(topic, queueId);
+        ConsumeQueue consumeQueue = getDefaultMessageStore().findConsumeQueueAndCreateIfNotExist(topic, queueId);
         for (AppendMessageResult appendMessageResult : appendMessageResults) {
             long offset = messageStore.getOffsetInQueueByTime(topic, queueId, appendMessageResult.getStoreTimestamp() + skewing);
             long offset2 = messageStore.getOffsetInQueueByTime(topic, queueId, appendMessageResult.getStoreTimestamp() - skewing);
@@ -237,7 +237,7 @@ public class DefaultMessageStoreTest {
         StoreTestUtil.waitCommitLogReput((DefaultMessageStore) messageStore);
         int skewing = 20000;
 
-        ConsumeQueue consumeQueue = getDefaultMessageStore().findConsumeQueue(topic, queueId);
+        ConsumeQueue consumeQueue = getDefaultMessageStore().findConsumeQueueAndCreateIfNotExist(topic, queueId);
         for (AppendMessageResult appendMessageResult : appendMessageResults) {
             long offset = messageStore.getOffsetInQueueByTime(topic, queueId, appendMessageResult.getStoreTimestamp() + skewing);
             long offset2 = messageStore.getOffsetInQueueByTime(topic, queueId, appendMessageResult.getStoreTimestamp() - skewing);
@@ -309,7 +309,7 @@ public class DefaultMessageStoreTest {
         //Thread.sleep(10);
         StoreTestUtil.waitCommitLogReput((DefaultMessageStore) messageStore);
 
-        ConsumeQueue consumeQueue = getDefaultMessageStore().findConsumeQueue(topic, queueId);
+        ConsumeQueue consumeQueue = getDefaultMessageStore().findConsumeQueueAndCreateIfNotExist(topic, queueId);
         int minOffsetInQueue = (int) consumeQueue.getMinOffsetInQueue();
         for (int i = minOffsetInQueue; i < consumeQueue.getMaxOffsetInQueue(); i++) {
             long messageStoreTimeStamp = messageStore.getMessageStoreTimeStamp(topic, queueId, i);

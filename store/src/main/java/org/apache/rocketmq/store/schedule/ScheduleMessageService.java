@@ -262,7 +262,7 @@ public class ScheduleMessageService extends ConfigManager {
 
         public void executeOnTimeup() {
             ConsumeQueue cq =
-                ScheduleMessageService.this.defaultMessageStore.findConsumeQueue(SCHEDULE_TOPIC,
+                ScheduleMessageService.this.defaultMessageStore.findConsumeQueueAndCreateIfNotExist(SCHEDULE_TOPIC,
                     delayLevel2QueueId(delayLevel));
 
             long failScheduleOffset = offset;

@@ -571,7 +571,7 @@ public class DefaultMessageStore implements MessageStore {
 
         final long maxOffsetPy = this.commitLog.getMaxOffset();
 
-        ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);
+        ConsumeQueue consumeQueue = findConsumeQueueAndCreateIfNotExist(topic, queueId);
         if (consumeQueue != null) {
             minOffset = consumeQueue.getMinOffsetInQueue();
             maxOffset = consumeQueue.getMaxOffsetInQueue();
@@ -715,7 +715,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     public long getMaxOffsetInQueue(String topic, int queueId) {
-        ConsumeQueue logic = this.findConsumeQueue(topic, queueId);
+        ConsumeQueue logic = this.findConsumeQueueAndCreateIfNotExist(topic, queueId);
         if (logic != null) {
             long offset = logic.getMaxOffsetInQueue();
             return offset;
@@ -725,7 +725,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     public long getMinOffsetInQueue(String topic, int queueId) {
-        ConsumeQueue logic = this.findConsumeQueue(topic, queueId);
+        ConsumeQueue logic = this.findConsumeQueueAndCreateIfNotExist(topic, queueId);
         if (logic != null) {
             return logic.getMinOffsetInQueue();
         }
@@ -735,7 +735,7 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public long getCommitLogOffsetInQueue(String topic, int queueId, long consumeQueueOffset) {
-        ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);
+        ConsumeQueue consumeQueue = findConsumeQueueAndCreateIfNotExist(topic, queueId);
         if (consumeQueue != null) {
             SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(consumeQueueOffset);
             if (bufferConsumeQueue != null) {
@@ -752,7 +752,7 @@ public class DefaultMessageStore implements MessageStore {
     }
 
     public long getOffsetInQueueByTime(String topic, int queueId, long timestamp) {
-        ConsumeQueue logic = this.findConsumeQueue(topic, queueId);
+        ConsumeQueue logic = this.findConsumeQueueAndCreateIfNotExist(topic, queueId);
         if (logic != null) {
             return logic.getOffsetInQueueByTime(timestamp);
         }
@@ -842,7 +842,7 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public long getEarliestMessageTime(String topic, int queueId) {
-        ConsumeQueue logicQueue = this.findConsumeQueue(topic, queueId);
+        ConsumeQueue logicQueue = this.findConsumeQueueAndCreateIfNotExist(topic, queueId);
         if (logicQueue != null) {
             long minLogicOffset = logicQueue.getMinLogicOffset();
 
@@ -877,7 +877,7 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public long getMessageStoreTimeStamp(String topic, int queueId, long consumeQueueOffset) {
-        ConsumeQueue logicQueue = this.findConsumeQueue(topic, queueId);
+        ConsumeQueue logicQueue = this.findConsumeQueueAndCreateIfNotExist(topic, queueId);
         if (logicQueue != null) {
             SelectMappedBufferResult result = logicQueue.getIndexBuffer(consumeQueueOffset);
             return getStoreTime(result);
@@ -888,7 +888,7 @@ public class DefaultMessageStore implements MessageStore {
 
     @Override
     public long getMessageTotalInQueue(String topic, int queueId) {
-        ConsumeQueue logicQueue = this.findConsumeQueue(topic, queueId);
+        ConsumeQueue logicQueue = this.findConsumeQueueAndCreateIfNotExist(topic, queueId);
         if (logicQueue != null) {
             return logicQueue.getMessageTotalInQueue();
         }
@@ -1087,7 +1087,7 @@ public class DefaultMessageStore implements MessageStore {
             return messageIds;
         }
 
-        ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);
+        ConsumeQueue consumeQueue = findConsumeQueueAndCreateIfNotExist(topic, queueId);
         if (consumeQueue != null) {
             minOffset = Math.max(minOffset, consumeQueue.getMinOffsetInQueue());
             maxOffset = Math.min(maxOffset, consumeQueue.getMaxOffsetInQueue());
@@ -1131,7 +1131,7 @@ public class DefaultMessageStore implements MessageStore {
 
         final long maxOffsetPy = this.commitLog.getMaxOffset();
 
-        ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);
+        ConsumeQueue consumeQueue = findConsumeQueueAndCreateIfNotExist(topic, queueId);
         if (consumeQueue != null) {
             SelectMappedBufferResult bufferConsumeQueue = consumeQueue.getIndexBuffer(consumeOffset);
             if (bufferConsumeQueue != null) {
@@ -1190,7 +1190,22 @@ public class DefaultMessageStore implements MessageStore {
         return null;
     }
 
+
     public ConsumeQueue findConsumeQueue(String topic, int queueId) {
+        ConcurrentMap<Integer, ConsumeQueue> map = consumeQueueTable.get(topic);
+        if (null == map) {
+            return null;
+        }
+
+        ConsumeQueue logic = map.get(queueId);
+        if (null == logic) {
+            return null;
+        }
+
+        return logic;
+    }
+
+    public ConsumeQueue findConsumeQueueAndCreateIfNotExist(String topic, int queueId) {
         ConcurrentMap<Integer, ConsumeQueue> map = consumeQueueTable.get(topic);
         if (null == map) {
             ConcurrentMap<Integer, ConsumeQueue> newMap = new ConcurrentHashMap<Integer, ConsumeQueue>(128);
@@ -1488,7 +1503,9 @@ public class DefaultMessageStore implements MessageStore {
 
     public void putMessagePositionInfo(DispatchRequest dispatchRequest) {
         ConsumeQueue cq = this.findConsumeQueue(dispatchRequest.getTopic(), dispatchRequest.getQueueId());
-        cq.putMessagePositionInfoWrapper(dispatchRequest);
+        if (null != cq) {
+            cq.putMessagePositionInfoWrapper(dispatchRequest);
+        }
     }
 
     @Override
